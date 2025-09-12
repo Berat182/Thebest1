@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
+local StarterGui = game:GetService("StarterGui")
 
 local function getCharacter()
     return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -27,6 +28,13 @@ local connection
 DashButton.MouseButton1Click:Connect(function()
     if running then return end
     running = true
+
+    -- Bildirim gönder
+    StarterGui:SetCore("SendNotification", {
+        Title = "Made by Peace",
+        Text = "Click on Dash And Shot",
+        Duration = 3
+    })
 
     connection = RunService.Heartbeat:Connect(function()
         local Character = getCharacter()
