@@ -24,17 +24,17 @@ end
 local running = false  -- Sürekli ışınlamayı kontrol eden değişken
 local connection
 
+-- Kod çalıştığında bir kez bildirim göster
+StarterGui:SetCore("SendNotification", {
+    Title = "🐸 Made by Peace",
+    Text = "Click Dash And Shot",
+    Duration = 3
+})
+
 -- Dash button tıklandığında
 DashButton.MouseButton1Click:Connect(function()
     if running then return end
     running = true
-
-    -- Bildirim gönder
-    StarterGui:SetCore("SendNotification", {
-        Title = "Made by Peace",
-        Text = "Click on Dash And Shot",
-        Duration = 3
-    })
 
     connection = RunService.Heartbeat:Connect(function()
         local Character = getCharacter()
