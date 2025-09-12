@@ -1,15 +1,12 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
 local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 local function getCharacter()
     return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 end
-
--- Butonlar
-local DashButton = LocalPlayer.PlayerGui.GAMEPLAYBUTTONS.MobileButtonHolder.Dash_Button.ButtonFrame.ImageButton
-local SwingButton = LocalPlayer.PlayerGui.GAMEPLAYBUTTONS.MobileButtonHolder.Swing_Button.ButtonFrame.ImageButton
 
 -- Workspace içinde BallShadow'ı arayan fonksiyon
 local function findBallShadow()
@@ -21,36 +18,115 @@ local function findBallShadow()
     return nil
 end
 
-local running = false  -- Sürekli ışınlamayı kontrol eden değişken
+-- Durum değişkenleri
+local running = false
 local connection
 
--- Kod çalıştığında bir kez bildirim göster
+-- Bildirim
 StarterGui:SetCore("SendNotification", {
     Title = "🐸 Made by Peace",
     Text = "Click Dash And Shot",
     Duration = 3
 })
 
--- Dash button tıklandığında
-DashButton.MouseButton1Click:Connect(function()
-    if running then return end
-    running = true
+-- UI oluştur
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ToggleUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = PlayerGui
 
-    connection = RunService.Heartbeat:Connect(function()
-        local Character = getCharacter()
-        local HRP = Character:WaitForChild("HumanoidRootPart")
-        local targetPart = findBallShadow()
-        if targetPart then
-            HRP.CFrame = targetPart.CFrame + Vector3.new(0, 8, 0)
-        end
-    end)
+local button = Instance.new("TextButton")
+button.Name = "ToggleButton"
+button.Parent = screenGui
+button.Size = UDim2.new(0, 120, 0, 40)
+button.Position = UDim2.new(0, 10, 0, 10)
+button.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+button.Text = "OFF"
+button.TextColor3 = Color3.fromRGB(255, 255, 255)
+button.Font = Enum.Font.GothamBold
+button.TextSize = 18
+button.AutoButtonColor = false
+button.BackgroundTransparency = 0.2
+button.BorderSizePixel = 0
+button.ZIndex = 2
+button.ClipsDescendants = true
+
+-- UI Corner
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = button
+
+-- UI Stroke
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 2
+stroke.Color = Color3.fromRGB(0, 170, 255)
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+stroke.Parent = button
+
+-- Hover efektleri
+local TweenService = game:GetService("TweenService")
+button.MouseEnter:Connect(function()
+    TweenService:Create(button, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+    }):Play()
 end)
 
--- Swing button tıklandığında
-SwingButton.MouseButton1Click:Connect(function()
-    running = false
-    if connection then
-        connection:Disconnect()
-        connection = nil
+button.MouseLeave:Connect(function()
+    TweenService:Create(button, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    }):Play()
+end)
+
+-- Sürüklenebilir yap
+local dragging, dragInput, dragStart, startPos
+button.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = button.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+button.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Buton tıklama -> On/Off toggle
+button.MouseButton1Click:Connect(function()
+    if running then
+        -- OFF
+        running = false
+        button.Text = "OFF"
+        if connection then
+            connection:Disconnect()
+            connection = nil
+        end
+    else
+        -- ON
+        running = true
+        button.Text = "ON"
+        connection = RunService.Heartbeat:Connect(function()
+            local Character = getCharacter()
+            local HRP = Character:WaitForChild("HumanoidRootPart")
+            local targetPart = findBallShadow()
+            if targetPart then
+                HRP.CFrame = targetPart.CFrame + Vector3.new(0, 8, 0)
+            end
+        end)
     end
 end)
