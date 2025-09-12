@@ -1,0 +1,48 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local function getCharacter()
+    return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+end
+
+-- Butonlar
+local DashButton = LocalPlayer.PlayerGui.GAMEPLAYBUTTONS.MobileButtonHolder.Dash_Button.ButtonFrame.ImageButton
+local SwingButton = LocalPlayer.PlayerGui.GAMEPLAYBUTTONS.MobileButtonHolder.Swing_Button.ButtonFrame.ImageButton
+
+-- Workspace içinde BallShadow'ı arayan fonksiyon
+local function findBallShadow()
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.Name == "BallShadow" then
+            return obj
+        end
+    end
+    return nil
+end
+
+local running = false  -- Sürekli ışınlamayı kontrol eden değişken
+local connection
+
+-- Dash button tıklandığında
+DashButton.MouseButton1Click:Connect(function()
+    if running then return end
+    running = true
+
+    connection = RunService.Heartbeat:Connect(function()
+        local Character = getCharacter()
+        local HRP = Character:WaitForChild("HumanoidRootPart")
+        local targetPart = findBallShadow()
+        if targetPart then
+            HRP.CFrame = targetPart.CFrame + Vector3.new(0, 8, 0)
+        end
+    end)
+end)
+
+-- Swing button tıklandığında
+SwingButton.MouseButton1Click:Connect(function()
+    running = false
+    if connection then
+        connection:Disconnect()
+        connection = nil
+    end
+end)
